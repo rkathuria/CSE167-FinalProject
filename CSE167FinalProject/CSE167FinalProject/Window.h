@@ -20,6 +20,7 @@
 #include "Object.h"
 #include "Cube.h"
 #include "shader.h"
+#include "ShadowMapper.hpp"
 
 class Window
 {
@@ -32,7 +33,6 @@ public:
 	static void idleCallback();
 	static void displayCallback(GLFWwindow*);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void createShadow(); 
 };
 
 #endif

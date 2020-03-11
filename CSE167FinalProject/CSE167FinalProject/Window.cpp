@@ -6,7 +6,6 @@
  */
 namespace
 {
-	int width, height;
 	std::string windowTitle("GLFW Starter Project");
 
 	Cube* cube;
@@ -21,58 +20,50 @@ namespace
 	glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
 	glm::mat4 projection; // Projection matrix.
 
-	GLuint program; // The shader program id.
+	GLuint shader; // The shader program id.
 	GLuint projectionLoc; // Location of projection in shader.
 	GLuint viewLoc; // Location of view in shader.
 	GLuint modelLoc; // Location of model in shader.
 	GLuint colorLoc; // Location of color in shader.
+
+    ShadowMapper *shadowMapper;
+    GLuint shadowShader;
 };
+
+namespace app {
+int width, height;
+}
 
 bool Window::initializeProgram()
 {
 	// Create a shader program with a vertex shader and a fragment shader.
-	program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
-
+	shader = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
 	// Check the shader program.
-	if (!program)
+	if (!shader)
 	{
 		std::cerr << "Failed to initialize shader program" << std::endl;
 		return false;
 	}
 
 	// Activate the shader program.
-	glUseProgram(program);
+	glUseProgram(shader);
     
 	// Get the locations of uniform variables.
-	projectionLoc = glGetUniformLocation(program, "projection");
-	viewLoc = glGetUniformLocation(program, "view");
-	modelLoc = glGetUniformLocation(program, "model");
-	colorLoc = glGetUniformLocation(program, "color");
+	projectionLoc = glGetUniformLocation(shader, "projection");
+	viewLoc = glGetUniformLocation(shader, "view");
+	modelLoc = glGetUniformLocation(shader, "model");
+	colorLoc = glGetUniformLocation(shader, "color");
+    
+    
+    // Create the shadow shader program
+    shadowShader = LoadShaders("shaders/shadow.vert", "shaders/shaders.frag");
+    if (!shadowShader) {
+        std::cerr << "Failed to initialize the shadow shader program" << std::endl;
+        return false;
+    }
+    
 
 	return true;
-}
-
-void Window::createShadow() {
-    unsigned int depthMapFBO;
-    glGenFramebuffers(1, &depthMapFBO);
-    
-    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-
-    unsigned int depthMap;
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-                 SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
 bool Window::initializeObjects()
@@ -92,7 +83,7 @@ void Window::cleanUp()
 	delete cube;
 
 	// Delete the shader program.
-	glDeleteProgram(program);
+	glDeleteProgram(shader);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -148,7 +139,7 @@ GLFWwindow* Window::createWindow(int width, int height)
 	glfwSwapInterval(0);
 
 	// Call the resize callback to make sure things get drawn immediately.
-	Window::resizeCallback(window, width, height);
+	Window::resizeCallback(window, app::width, app::height);
 
 	return window;
 }
@@ -157,16 +148,16 @@ void Window::resizeCallback(GLFWwindow* window, int w, int h)
 {
 #ifdef __APPLE__
 	// In case your Mac has a retina display.
-	glfwGetFramebufferSize(window, &width, &height);
+	glfwGetFramebufferSize(window, &app::width, &app::height);
 #endif
-	width = w;
-	height = h;
+	app::width = w;
+	app::height = h;
 	// Set the viewport size.
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, app::width, app::height);
 
 	// Set the projection matrix.
 	projection = glm::perspective(glm::radians(fovy),
-		(float)width / (float)height, near, far);
+		(float)app::width / (float)app::height, near, far);
 }
 
 void Window::idleCallback()
