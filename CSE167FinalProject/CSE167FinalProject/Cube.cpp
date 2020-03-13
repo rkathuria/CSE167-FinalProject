@@ -84,6 +84,32 @@ Cube::Cube(float size)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// Unbind from the VAO.
 	glBindVertexArray(0);
+    
+//
+//    // set up floating point framebuffer to render scene to
+//    unsigned int hdrFBO;
+//    glGenFramebuffers(1, &hdrFBO);
+//    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+//    unsigned int colorBuffers[2];
+//    glGenTextures(2, colorBuffers);
+//    for (unsigned int i = 0; i < 2; i++)
+//    {
+//        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+//        glTexImage2D(
+//            GL_TEXTURE_2D, 0, GL_RGB16F, 480, 640, 0, GL_RGB, GL_FLOAT, NULL
+//        );
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//        // attach texture to framebuffer
+//        glFramebufferTexture2D(
+//            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0
+//        );
+//    }
+//
+//    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+//    glDrawBuffers(2, attachments);
 }
 
 Cube::~Cube()
@@ -95,6 +121,7 @@ Cube::~Cube()
 
 void Cube::draw()
 {
+
 	// Bind to the VAO.
 	glBindVertexArray(vao);
 	// Draw triangles using the indices in the second VBO, which is an 
@@ -117,3 +144,10 @@ void Cube::spin(float deg)
 		glm::vec3(0.0f, 1.0f, 0.0f)) * model;
 }
 
+void Cube::scale(glm::vec3 dir) {
+    model = glm::scale(dir) * model;
+}
+
+void Cube::translate(glm::vec3 dir) {
+    model = glm::translate(dir) * model;
+}
