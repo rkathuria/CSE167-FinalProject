@@ -32,7 +32,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		13F4B5E0241B2200003E4526 /* Icon */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Icon"; sourceTree = "<group>"; };
 		13F4B5E1241B2200003E4526 /* Cube.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cube.h; sourceTree = "<group>"; };
 		13F4B5E2241B2200003E4526 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		13F4B5E3241B2200003E4526 /* Particle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Particle.h; sourceTree = "<group>"; };
@@ -51,7 +50,6 @@
 		13F4B5F0241B2201003E4526 /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Object.h; sourceTree = "<group>"; };
 		13F4B5F2241B2201003E4526 /* particle6.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = particle6.jpg; sourceTree = "<group>"; };
 		13F4B5F4241B2201003E4526 /* Cube.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cube.cpp; sourceTree = "<group>"; };
-		13F4B5F6241B2201003E4526 /* Icon */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Icon"; sourceTree = "<group>"; };
 		13F4B5F7241B2201003E4526 /* particle.frag */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = particle.frag; sourceTree = "<group>"; };
 		13F4B5F8241B2201003E4526 /* shader.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = shader.vert; sourceTree = "<group>"; };
 		13F4B5F9241B2201003E4526 /* particle.vert */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = particle.vert; sourceTree = "<group>"; };
@@ -78,7 +76,6 @@
 		13F4B5DF241B2200003E4526 /* shadows */ = {
 			isa = PBXGroup;
 			children = (
-				13F4B5E0241B2200003E4526 /* Icon */,
 			);
 			path = shadows;
 			sourceTree = "<group>";
@@ -94,7 +91,6 @@
 		13F4B5F5241B2201003E4526 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
-				13F4B5F6241B2201003E4526 /* Icon */,
 				13F4B5F7241B2201003E4526 /* particle.frag */,
 				13F4B5F8241B2201003E4526 /* shader.vert */,
 				13F4B5F9241B2201003E4526 /* particle.vert */,
