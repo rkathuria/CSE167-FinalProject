@@ -12,34 +12,35 @@
  */
 namespace
 {
-    int width, height;
-    std::string windowTitle("GLFW Starter Project");
+int width, height;
+std::string windowTitle("GLFW Starter Project");
 
-
-
-    Cube* cube;
+//Cube* cube;
 Maze* maze;
-    Object* currentObj; // The object currently displaying.
+//Object* currentObj; // The object currently displaying.
 
-    glm::vec3 eye(0, 0, 20); // Camera position.
-    glm::vec3 center(0, 0, 0); // The point we are looking at.
-    glm::vec3 up(0, 1, 0); // The up direction of the camera.
-    float fovy = 60;
-    float near = 1;
-    float far = 1000;
-    glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
-    glm::mat4 projection; // Projection matrix.
+glm::vec3 eye(0, 0, 20); // Camera position.
+glm::vec3 center(0, 0, 0); // The point we are looking at.
+glm::vec3 up(0, 1, 0); // The up direction of the camera.
+float fovy = 60;
+float near = 1;
+float far = 1000;
+glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
+glm::mat4 projection; // Projection matrix.
 
-    GLuint program; // The shader program id.
+GLuint program; // The shader program id.
+GLuint projectionLoc; // Location of projection in shader.
+GLuint viewLoc; // Location of view in shader.
+GLuint modelLoc; // Location of model in shader.
+GLuint colorLoc; // Location of color in shader.
+
 GLuint shadowProg;
+
 GLuint lightingProg;
+
 GLuint particleProg;
-    GLuint projectionLoc; // Location of projection in shader.
-    GLuint viewLoc; // Location of view in shader.
-    GLuint modelLoc; // Location of model in shader.
-    GLuint colorLoc; // Location of color in shader.
-    
-PointCloud* cloud;
+
+//PointCloud* cloud;
 ParticleGenerator* generator;
 
 std::pair<glm::vec3, glm::vec3> directionalLight(glm::vec3(-10,0,0), glm::vec3(1.0f,1.0f,1.0f));
@@ -49,9 +50,6 @@ bool Window::initializeProgram()
 {
     // Create a shader program with a vertex shader and a fragment shader.
     program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
-    particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
-
-
     // Check the shader program.
     if (!program)
     {
@@ -59,15 +57,14 @@ bool Window::initializeProgram()
         return false;
     }
 
+    // Create shader program for the particle light
+    particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
     if (!particleProg)
     {
         std::cerr << "Failed to initialize lighting program" << std::endl;
         return false;
     }
-
-    
-    generator = new ParticleGenerator();
-    
+        
     return true;
 }
 
@@ -75,15 +72,18 @@ bool Window::initializeProgram()
 
 bool Window::initializeObjects()
 {
+    // Construct particle generator
+    generator = new ParticleGenerator();
+    
     // Create a cube of size 5.
-    cube = new Cube(5.0f);
-//
-    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
-//    // Set cube to be the first to display
-    currentObj = cloud;
-//
-    cloud->scale(glm::vec3(8,8,8));
-    cloud->translate(glm::vec3(0,-5,0));
+//    cube = new Cube(5.0f);
+
+//    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
+    // Set cube to be the first to display
+//    currentObj = cloud;
+
+//    cloud->scale(glm::vec3(8,8,8));
+//    cloud->translate(glm::vec3(0,-5,0));
     
     maze = new Maze();
 
@@ -95,13 +95,13 @@ void Window::cleanUp()
 {
     // Deallcoate the objects.
     delete generator;
-    delete cube;
-    delete cloud;
+//    delete cube;
+//    delete cloud;
     delete maze;
 
     // Delete the shader program.
     glDeleteProgram(program);
-    glDeletePrgoram(particleProg);
+    glDeleteProgram(particleProg);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -227,10 +227,10 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
                 break;
             case GLFW_KEY_1:
                 // Set currentObj to cube
-                currentObj = cube;
+//                currentObj = cube;
                 break;
             case GLFW_KEY_G:
-                cloud->translate(glm::vec3(2,0,0));
+//                cloud->translate(glm::vec3(2,0,0));
                 break;
             default:
                 break;
