@@ -1,3 +1,6 @@
-# miscellaneous
+# Miscellaneous dir files
 *Icon?
 */*.DS_Store
+
+# Workspace files
+CSE167FinalProject/CSE167FinalProject.xcodeproj/project.xcworkspace/xcuserdata/
