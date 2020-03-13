@@ -13,11 +13,6 @@ Maze::Maze()
     }
     
     cout << rows << " " << cols << endl;
-    
-
-    
-    
-    
 }
 
 void Maze::draw(GLuint modelLoc, GLuint colorLoc) {

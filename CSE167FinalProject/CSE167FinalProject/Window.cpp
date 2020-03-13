@@ -15,7 +15,7 @@ namespace
 int width, height;
 std::string windowTitle("GLFW Starter Project");
 
-//Cube* cube;
+Cube* cube;
 Maze* maze;
 //Object* currentObj; // The object currently displaying.
 
@@ -76,7 +76,7 @@ bool Window::initializeObjects()
     generator = new ParticleGenerator();
     
     // Create a cube of size 5.
-//    cube = new Cube(5.0f);
+    cube = new Cube(5.0f);
 
 //    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
     // Set cube to be the first to display
@@ -199,11 +199,14 @@ void Window::displayCallback(GLFWwindow* window)
     
     
     //DRAWING MAZE
-//    glUseProgram(program);
-//
-//    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-//    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-//    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+    glUseProgram(program);
+
+    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+//    cube->draw();
+    
     // Gets events, including input such as keyboard and mouse or window resizing.
     glfwPollEvents();
     // Swap buffers.

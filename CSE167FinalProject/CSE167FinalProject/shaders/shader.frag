@@ -13,5 +13,5 @@ out vec4 fragColor;
 void main()
 {
     // Use the color passed in. An alpha of 1.0f means it is not transparent.
-    fragColor = vec4(color, sampleExtraOutput);
+    fragColor = vec4(1,1,1, sampleExtraOutput);
 }

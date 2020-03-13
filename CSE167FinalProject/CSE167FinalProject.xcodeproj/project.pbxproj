@@ -15,6 +15,10 @@
 		13F4B600241B2201003E4526 /* ParticleGenerator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13F4B5EE241B2201003E4526 /* ParticleGenerator.cpp */; };
 		13F4B601241B2201003E4526 /* shader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13F4B5EF241B2201003E4526 /* shader.cpp */; };
 		13F4B602241B2201003E4526 /* Cube.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13F4B5F4241B2201003E4526 /* Cube.cpp */; };
+		13F4B604241B247A003E4526 /* particle.frag in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13F4B5F7241B2201003E4526 /* particle.frag */; };
+		13F4B605241B247B003E4526 /* shader.vert in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13F4B5F8241B2201003E4526 /* shader.vert */; };
+		13F4B606241B247B003E4526 /* particle.vert in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13F4B5F9241B2201003E4526 /* particle.vert */; };
+		13F4B607241B247B003E4526 /* shader.frag in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13F4B5FA241B2201003E4526 /* shader.frag */; };
 		857CDB00240E022D002179CD /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 857CDAFF240E022D002179CD /* OpenGL.framework */; };
 		857CDB05240E0321002179CD /* libglfw.3.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 857CDB01240E024A002179CD /* libglfw.3.3.dylib */; };
 /* End PBXBuildFile section */
@@ -26,6 +30,10 @@
 			dstPath = shaders;
 			dstSubfolderSpec = 16;
 			files = (
+				13F4B606241B247B003E4526 /* particle.vert in CopyFiles */,
+				13F4B604241B247A003E4526 /* particle.frag in CopyFiles */,
+				13F4B605241B247B003E4526 /* shader.vert in CopyFiles */,
+				13F4B607241B247B003E4526 /* shader.frag in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
