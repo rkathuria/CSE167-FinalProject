@@ -12,63 +12,65 @@
  */
 namespace
 {
-    int width, height;
-    std::string windowTitle("GLFW Starter Project");
+	std::string windowTitle("GLFW Starter Project");
 
+	Cube* cube;
+	Object* currentObj; // The object currently displaying.
 
+	glm::vec3 eye(0, 0, 20); // Camera position.
+	glm::vec3 center(0, 0, 0); // The point we are looking at.
+	glm::vec3 up(0, 1, 0); // The up direction of the camera.
+	float fovy = 60;
+	float near = 1;
+	float far = 1000;
+	glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
+	glm::mat4 projection; // Projection matrix.
 
-    Cube* cube;
-Maze* maze;
-    Object* currentObj; // The object currently displaying.
+	GLuint shader; // The shader program id.
+	GLuint projectionLoc; // Location of projection in shader.
+	GLuint viewLoc; // Location of view in shader.
+	GLuint modelLoc; // Location of model in shader.
+	GLuint colorLoc; // Location of color in shader.
 
-    glm::vec3 eye(0, 0, 20); // Camera position.
-    glm::vec3 center(0, 0, 0); // The point we are looking at.
-    glm::vec3 up(0, 1, 0); // The up direction of the camera.
-    float fovy = 60;
-    float near = 1;
-    float far = 1000;
-    glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
-    glm::mat4 projection; // Projection matrix.
-
-    GLuint program; // The shader program id.
-GLuint shadowProg;
-GLuint lightingProg;
-GLuint particleProg;
-    GLuint projectionLoc; // Location of projection in shader.
-    GLuint viewLoc; // Location of view in shader.
-    GLuint modelLoc; // Location of model in shader.
-    GLuint colorLoc; // Location of color in shader.
-    
-PointCloud* cloud;
-ParticleGenerator* generator;
-
-std::pair<glm::vec3, glm::vec3> directionalLight(glm::vec3(-10,0,0), glm::vec3(1.0f,1.0f,1.0f));
+    Scene *scene;
+    GLuint shadowShader;
 };
+
+namespace app
+{
+    int width, height;
+}
 
 bool Window::initializeProgram()
 {
-    // Create a shader program with a vertex shader and a fragment shader.
-    program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
-    particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
+	// Create a shader program with a vertex shader and a fragment shader.
+	shader = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
+	// Check the shader program.
+	if (!shader)
+	{
+		std::cerr << "Failed to initialize shader program" << std::endl;
+		return false;
+	}
 
-
-    // Check the shader program.
-    if (!program)
-    {
-        std::cerr << "Failed to initialize shader program" << std::endl;
+	// Activate the shader program.
+	glUseProgram(shader);
+    
+	// Get the locations of uniform variables.
+	projectionLoc = glGetUniformLocation(shader, "projection");
+	viewLoc = glGetUniformLocation(shader, "view");
+	modelLoc = glGetUniformLocation(shader, "model");
+	colorLoc = glGetUniformLocation(shader, "color");
+    
+    
+    // Create the shadow shader program
+    shadowShader = LoadShaders("shaders/shadow.vert", "shaders/shadow.frag");
+    if (!shadowShader) {
+        std::cerr << "Failed to initialize the shadow shader program" << std::endl;
         return false;
     }
-
-    if (!particleProg)
-    {
-        std::cerr << "Failed to initialize lighting program" << std::endl;
-        return false;
-    }
-
     
-    generator = new ParticleGenerator();
-    
-    return true;
+
+	return true;
 }
 
 
@@ -78,14 +80,14 @@ bool Window::initializeObjects()
     // Create a cube of size 5.
     cube = new Cube(5.0f);
 //
-    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
+//    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
 //    // Set cube to be the first to display
-    currentObj = cloud;
-//
-    cloud->scale(glm::vec3(8,8,8));
-    cloud->translate(glm::vec3(0,-5,0));
+//    currentObj = cloud;
+
+//    cloud->scale(glm::vec3(8,8,8));
+//    cloud->translate(glm::vec3(0,-5,0));
     
-    maze = new Maze();
+//    maze = new Maze();
 
     return true;
 }
@@ -93,15 +95,11 @@ bool Window::initializeObjects()
 
 void Window::cleanUp()
 {
-    // Deallcoate the objects.
-    delete generator;
-    delete cube;
-    delete cloud;
-    delete maze;
+	// Deallcoate the objects.
+	delete cube;
 
-    // Delete the shader program.
-    glDeleteProgram(program);
-    glDeletePrgoram(particleProg);
+	// Delete the shader program.
+	glDeleteProgram(shader);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -155,9 +153,8 @@ GLFWwindow* Window::createWindow(int width, int height)
 
     // Set swap interval to 1.
     glfwSwapInterval(0);
-
-    // Call the resize callback to make sure things get drawn immediately.
-    Window::resizeCallback(window, width, height);
+	// Call the resize callback to make sure things get drawn immediately.
+	Window::resizeCallback(window, width, height);
 
     return window;
 }
@@ -165,17 +162,17 @@ GLFWwindow* Window::createWindow(int width, int height)
 void Window::resizeCallback(GLFWwindow* window, int w, int h)
 {
 #ifdef __APPLE__
-    // In case your Mac has a retina display.
-    glfwGetFramebufferSize(window, &width, &height);
+	// In case your Mac has a retina display.
+	glfwGetFramebufferSize(window, &app::width, &app::height);
 #endif
-    width = w;
-    height = h;
-    // Set the viewport size.
-    glViewport(0, 0, width, height);
+	app::width = w;
+	app::height = h;
+	// Set the viewport size.
+	glViewport(0, 0, app::width, app::height);
 
-    // Set the projection matrix.
-    projection = glm::perspective(glm::radians(fovy),
-        (float)width / (float)height, near, far);
+	// Set the projection matrix.
+	projection = glm::perspective(glm::radians(fovy),
+		(float)app::width / (float)app::height, near, far);
 }
 
 void Window::idleCallback()
@@ -189,11 +186,24 @@ void Window::displayCallback(GLFWwindow* window)
     // Clear the color and depth buffers.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    glUseProgram(shader);
+    
+    glm::mat4 pointlightView = glm::lookAt(eye, center, up);
+    
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+    glUniform3f(glGetUniformLocation(shader,"color"), 1, 1, 1);
+    cube->draw();
+    
+    
+    glm::mat4 aerialView = glm::lookAt(glm::vec3(0,0,20), glm::vec3(0,0,0), glm::vec3(0,1,20));
+    
     //DRAWING PARTICLES
 //    glUseProgram(particleProg);
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
-//
+////
 //    generator->draw(glGetUniformLocation(shadowProg, "offset"), glGetUniformLocation(shadowProg, "color"));
 
     
@@ -230,7 +240,7 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
                 currentObj = cube;
                 break;
             case GLFW_KEY_G:
-                cloud->translate(glm::vec3(2,0,0));
+//                cloud->translate(glm::vec3(2,0,0));
                 break;
             default:
                 break;

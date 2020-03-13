@@ -20,8 +20,8 @@
 #include "Cube.h"
 #include "shader.h"
 #include "Particle.h"
-#include "PointCloud.h"
 #include "Maze.h"
+#include "Scene.hpp"
 
 class Window
 {
@@ -34,12 +34,6 @@ public:
 	static void idleCallback();
 	static void displayCallback(GLFWwindow*);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void createShadow();
-    static void createParticles();
-    static void updateParticles();
-    static GLuint FirstUnusedParticle();
-    static void RespawnParticle(Particle &particle, glm::vec2 offset);
-    static void setupGlow();
 };
 
 

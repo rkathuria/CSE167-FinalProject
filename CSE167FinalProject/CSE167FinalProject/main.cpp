@@ -14,6 +14,9 @@ void setupCallbacks(GLFWwindow* window)
 	glfwSetKeyCallback(window, Window::keyCallback);
 	// Set the window resize callback.
 	glfwSetWindowSizeCallback(window, Window::resizeCallback);
+    
+    // tell GLFW to capture our mouse
+//    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void setupOpenglSettings()
@@ -21,9 +24,9 @@ void setupOpenglSettings()
 	// Enable depth buffering.
 	glEnable(GL_DEPTH_TEST);
 	// Related to shaders and z value comparisons for the depth buffer.
-	glDepthFunc(GL_LEQUAL);
+//	glDepthFunc(GL_LEQUAL);
 	// Set polygon drawing mode to fill front and back of each polygon.
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	// Set clear color to black.
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 }

@@ -1,6 +1,8 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
+#define GL_SILENCE_DEPRECATION
+
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #else
