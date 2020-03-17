@@ -30,25 +30,25 @@ GLuint ParticleGenerator::FirstUnusedParticle()
     return 0;
 }
 
-void ParticleGenerator::RespawnParticle(Particle &particle, glm::vec2 offset)
+void ParticleGenerator::RespawnParticle(Particle &particle, glm::vec2 loc, glm::vec2 offset)
 {
     GLfloat random = ((rand() % 100) - 50) / 100.0f;
     GLfloat random2 = ((rand() % 100) - 50) / 100.0f;
     GLfloat rColor = 0.5 + ((rand() % 100) / 100.0f);
-    particle.pos = glm::vec2(random, random2) + offset;
+    particle.pos = loc + glm::vec2(random, random2) + offset;
     particle.color = glm::vec4(rColor, rColor, rColor, 1.0f);
     particle.life = 1.0f;
     particle.vel = glm::vec2(2,0) * 0.1f;
 }
 
-void ParticleGenerator::update() {
+void ParticleGenerator::update(glm::vec2 loc, int dir) {
     float dt = 0.2;
     GLuint nr_new_particles = 2;
     // Add new particles
     for (GLuint i = 0; i < nr_new_particles; ++i)
     {
         int unusedParticle = FirstUnusedParticle();
-        RespawnParticle(particles[unusedParticle], glm::vec2(-1.2f, 0.5f));
+        RespawnParticle(particles[unusedParticle], loc, dirs[dir]);
     }
     // Uupdate all particles
     for (GLuint i = 0; i < nr_particles; ++i)
@@ -66,6 +66,7 @@ void ParticleGenerator::update() {
 void ParticleGenerator::draw(GLuint posLoc, GLuint colorLoc) {
     for(Particle p : particles) {
         if(p.life > 0) {
+            cout << glm::to_string(p.pos) << endl;
             glUniform2fv(posLoc, 1, glm::value_ptr(p.pos));
             glUniform4fv(colorLoc, 1, glm::value_ptr(p.color));
             p.draw();

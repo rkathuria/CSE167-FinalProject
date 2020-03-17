@@ -37,9 +37,8 @@ public:
     static void createShadow();
     static void createParticles();
     static void updateParticles();
-    static GLuint FirstUnusedParticle();
-    static void RespawnParticle(Particle &particle, glm::vec2 offset);
     static void setupGlow();
+    static unsigned int loadTexture(char const * path);
 };
 
 
