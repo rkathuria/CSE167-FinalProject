@@ -21,6 +21,8 @@ private:
 public:
 	Cube(float size);
 	~Cube();
+    
+    glm::vec3 location;
 
 	void draw();
 	void update();

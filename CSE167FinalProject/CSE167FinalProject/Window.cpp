@@ -30,19 +30,24 @@ Maze* maze;
     glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
     glm::mat4 projection; // Projection matrix.
 
+    int dir = 0;
+
+
+bool collisionToggle = true;
+bool particleToggle = true;
+
     GLuint program; // The shader program id.
-GLuint shadowProg;
-GLuint lightingProg;
-GLuint particleProg;
-    GLuint projectionLoc; // Location of projection in shader.
-    GLuint viewLoc; // Location of view in shader.
-    GLuint modelLoc; // Location of model in shader.
-    GLuint colorLoc; // Location of color in shader.
-    
+    GLuint particleProg;
+    GLuint glowBlurProg;
+    GLuint glowProg;
+    unsigned int framebuffer;
 PointCloud* cloud;
 ParticleGenerator* generator;
+unsigned int quadVAO;
+unsigned int textureColorbuffer;
+unsigned int colorBuffers[2];
+//unsigned int cubeTexture = loadTexture(FileSystem::getPath("images/marble.jpg").c_str());
 
-std::pair<glm::vec3, glm::vec3> directionalLight(glm::vec3(-10,0,0), glm::vec3(1.0f,1.0f,1.0f));
 };
 
 bool Window::initializeProgram()
@@ -50,8 +55,14 @@ bool Window::initializeProgram()
     // Create a shader program with a vertex shader and a fragment shader.
     program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
     particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
+    glowBlurProg = LoadShaders("shaders/lighting.vert", "shaders/lighting.frag");
+    glowProg = LoadShaders("shaders/glow.vert", "shaders/glow.frag");
 
 
+    
+    glUniform1d(glGetAttribLocation(glowBlurProg, "scene"), 0);
+    glUniform1d(glGetAttribLocation(glowBlurProg, "bloomBlur"), 1);
+    
     // Check the shader program.
     if (!program)
     {
@@ -66,9 +77,89 @@ bool Window::initializeProgram()
     }
 
     
-    generator = new ParticleGenerator();
-    
+//    generator = new ParticleGenerator();
+//    setupGlow();
     return true;
+}
+
+void Window::setupGlow() {
+    int SCR_WIDTH=640;
+    int SCR_HEIGHT=480;
+    
+//    unsigned int fbo;
+//    glGenFramebuffers(1, &fbo);
+//
+//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    
+
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // attach texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+    
+    float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+    // screen quad VAO
+    unsigned int quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    
+    
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    // create a color attachment texture
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+    // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    else
+        cout << "IS LIT" << endl;
+    
+    
+
+
+
+
+    
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
@@ -76,14 +167,14 @@ bool Window::initializeProgram()
 bool Window::initializeObjects()
 {
     // Create a cube of size 5.
-    cube = new Cube(5.0f);
+    cube = new Cube(10.0f);
 //
     cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
 //    // Set cube to be the first to display
     currentObj = cloud;
 //
-    cloud->scale(glm::vec3(8,8,8));
-    cloud->translate(glm::vec3(0,-5,0));
+    cube->scale(glm::vec3(0.2f, 0.2f, 0.05f));
+    cube->translate(glm::vec3(-12,0,0));
     
     maze = new Maze();
 
@@ -101,7 +192,7 @@ void Window::cleanUp()
 
     // Delete the shader program.
     glDeleteProgram(program);
-    glDeletePrgoram(particleProg);
+    glDeleteProgram(particleProg);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -180,31 +271,79 @@ void Window::resizeCallback(GLFWwindow* window, int w, int h)
 
 void Window::idleCallback()
 {
-//    generator->update();
+
+//    generator->update(glm::vec2(cube->location[0], cube->location[1]), dir);
 
 }
 
 void Window::displayCallback(GLFWwindow* window)
 {
-    // Clear the color and depth buffers.
+    
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+//    glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // make sure we clear the framebuffer's content
+
+
     
     //DRAWING PARTICLES
 //    glUseProgram(particleProg);
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
 //
-//    generator->draw(glGetUniformLocation(shadowProg, "offset"), glGetUniformLocation(shadowProg, "color"));
+//    if(particleToggle)
+//        generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
 
     
     
     //DRAWING MAZE
-//    glUseProgram(program);
-//
-//    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-//    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-//    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+    glUseProgram(program);
+
+    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(0.5f)));
+    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
     // Gets events, including input such as keyboard and mouse or window resizing.
+    
+//
+    glUseProgram(program);
+    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+    glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(glm::vec3(1.0f)));
+    cube->draw();
+    
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(glowProg);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, colorBuffers[1]);
+    
+    
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    glUseProgram(glowProg);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+//    glActiveTexture(GL_TEXTURE1);
+////    glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+//
+//
+    glBindVertexArray(quadVAO);
+//    glBindTexture(GL_TEXTURE_2D, colorBuffers[1]);    // use the color attachment texture as the texture of the quad plane
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    
+    
+    
     glfwPollEvents();
     // Swap buffers.
     glfwSwapBuffers(window);
@@ -229,11 +368,45 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
                 // Set currentObj to cube
                 currentObj = cube;
                 break;
-            case GLFW_KEY_G:
-                cloud->translate(glm::vec3(2,0,0));
+            case GLFW_KEY_A:
+                cube->translate(glm::vec3(-1,0,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle)
+                    cube->translate(glm::vec3(1,0,0));
+                else
+                    dir = 2;
                 break;
+            case GLFW_KEY_S:
+                cube->translate(glm::vec3(0,-1,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle)
+                    cube->translate(glm::vec3(0,1,0));
+                else
+                    dir = 3;
+                break;
+            case GLFW_KEY_W:
+                cube->translate(glm::vec3(0,1,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle)
+                    cube->translate(glm::vec3(0,-1,0));
+                else
+                    dir = 1;
+                break;
+            case GLFW_KEY_D:
+                cube->translate(glm::vec3(1,0,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle)
+                    cube->translate(glm::vec3(-1,0,0));
+                else
+                    dir = 0;
+                break;
+                
+            case GLFW_KEY_P:
+                particleToggle = !particleToggle;
+                break;
+            case GLFW_KEY_C:
+                collisionToggle = !collisionToggle;
+                break;
+
             default:
                 break;
         }
     }
 }
+

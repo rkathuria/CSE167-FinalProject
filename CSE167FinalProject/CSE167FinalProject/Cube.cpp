@@ -9,6 +9,7 @@ Cube::Cube(float size)
 	// The color of the cube. Try setting it to something else!
 	color = glm::vec3(1.0f, 0.95f, 0.1f);
 
+    location = glm::vec3(0,0,0);
 	/*
 	 * Cube indices used below.
 	 *    4----7
@@ -149,5 +150,6 @@ void Cube::scale(glm::vec3 dir) {
 }
 
 void Cube::translate(glm::vec3 dir) {
+    location += dir;
     model = glm::translate(dir) * model;
 }
