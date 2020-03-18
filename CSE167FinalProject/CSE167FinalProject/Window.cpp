@@ -23,6 +23,11 @@ glm::vec3 cameraEye(0, 0, 20); // Camera position.
 glm::vec3 cameraCenter(0, 0, 0); // The point we are looking at.
 glm::vec3 cameraUp(0, 1, 0); // The up direction of the camera.
 
+glm::vec3 lightPosition;
+glm::vec3 lightCenter;
+glm::vec3 lightUp(0,0,1);
+bool useLightView = false;
+
 float fovy = 60;
 float near = 1;
 float far = 1000;
@@ -32,9 +37,7 @@ glm::mat4 projection; // Projection matrix.
 int dir = 0;
 
 bool collisionToggle = true;
-bool particleToggle = true;
 bool cubeDraw = false;
-
 
 GLuint program; // The shader program id.
 GLuint projectionLoc; // Location of projection in shader.
@@ -46,23 +49,24 @@ GLuint shadowProg;
 
 ShadowMapFBO *shadowMap;
 GLuint shadowShader;
+GLuint depthProg;
 
 
 GLuint particleProg;
-
-GLuint glowBlurProg;
+bool particleToggle = true;
 
 GLuint blurProg;
 
+GLuint glowBlurProg;
+
 GLuint glowProg;
-
 unsigned int framebuffer;
-
-PointCloud* cloud;
-ParticleGenerator* generator;
 unsigned int quadVAO;
 unsigned int colorBuffers[2];
 unsigned int textureColorbuffer;
+
+PointCloud* cloud;
+ParticleGenerator* generator;
 };
 
 bool Window::initializeProgram()
@@ -73,9 +77,10 @@ bool Window::initializeProgram()
     glowBlurProg = LoadShaders("shaders/lighting.vert", "shaders/lighting.frag");
     glowProg = LoadShaders("shaders/glow.vert", "shaders/glow.frag");
     blurProg = LoadShaders("shaders/blur.vert", "shaders/blur.frag");
+    depthProg = LoadShaders("shaders/depthMap.vert", "shaders/depthMap.frag");
     
     // Check the shader program.
-    if (!program || !particleProg || !glowBlurProg || !glowProg || !blurProg)
+    if (!program || !particleProg || !glowBlurProg || !glowProg || !blurProg || !depthProg)
     {
         std::cerr << "Failed to initialize a shader program" << std::endl;
         return false;
@@ -85,6 +90,8 @@ bool Window::initializeProgram()
     glUniform1d(glGetAttribLocation(glowProg, "bloomBlur"), 1);
     
     generator = new ParticleGenerator();
+    
+    shadowMap = new ShadowMapFBO(width, height);
 //    setupGlow();
     return true;
 }
@@ -266,6 +273,37 @@ void Window::displayCallback(GLFWwindow* window)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     
+    // Shadow Mapping
+    // --------------
+//    glUseProgram(shadowProg);
+    glUseProgram(program);
+    lightPosition = cloud->location;
+    switch (dir)
+    {
+        case 0: // RIGHT
+            lightCenter = glm::vec3(lightPosition.x + near, lightPosition.y, lightPosition.z);
+            break;
+        case 1: // UP
+            lightCenter = glm::vec3(lightPosition.x, lightPosition.y + near, lightPosition.z);
+            break;
+        case 2: // LEFT
+            lightCenter = glm::vec3(lightPosition.x - near, lightPosition.y, lightPosition.z);
+            break;
+        case 3: // DOWN
+            lightCenter = glm::vec3(lightPosition.x, lightPosition.y - near, lightPosition.z);
+            break;
+    }
+    glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near, far);
+    glm::mat4 lightView = glm::lookAt(lightPosition, lightCenter, lightUp);
+    std::cout << "Light Values\n" << "\tposition: " << glm::to_string(lightPosition) << "\n\tcenter: " << glm::to_string(lightCenter) << std::endl;
+    glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+//    glUniformMatrix4fv(glGetUniformLocation(depthProg, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+//    maze->draw(depthProg);
+
+//    glUniformMatrix4fv(glGetUniformLocation(program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+//    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+    
+    
     // Particle Effect
     // ---------------
     glUseProgram(particleProg);
@@ -277,27 +315,28 @@ void Window::displayCallback(GLFWwindow* window)
         generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
     }
 
-    
+
     // Draw Maze
     // ---------
     glUseProgram(program);
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    maze->draw(program);
+    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+
+
+//    // Draw User Sprite
+//    // ------------------
+//    glUseProgram(program);
+//    if(cubeDraw)
+//    {
+//        glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+//        glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
+//        cube->draw();
+//    }
+//    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cloud->getModel()));
+//    glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cloud->getColor()));
+//    cloud->draw();
     
-    
-    // Draw User Sprite
-    // ------------------
-    glUseProgram(program);
-    if(cubeDraw)
-    {
-        glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
-        glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
-        cube->draw();
-    }
-    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cloud->getModel()));
-    glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cloud->getColor()));
-    cloud->draw();
     
 
 //    glUseProgram(glowBlurProg);
@@ -339,6 +378,20 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
     {
         switch (key)
         {
+            case GLFW_KEY_2:
+                if (useLightView)
+                {
+                    view = glm::lookAt(cameraEye, cameraCenter, cameraUp);
+                    projection = glm::perspective(glm::radians(fovy),
+                    (float)width / (float)height, near, far);
+                }
+                else
+                {
+                    view = glm::lookAt(lightPosition, lightCenter, lightUp);
+                    projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near, far);
+                }
+                useLightView = !useLightView;
+                break;
             case GLFW_KEY_ESCAPE:
                 // Close the window. This causes the program to also terminate.
                 glfwSetWindowShouldClose(window, GL_TRUE);

@@ -22,7 +22,7 @@ ShadowMapFBO::ShadowMapFBO(GLuint width, GLuint height)
     // bind fbo to texture
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     
-    // draw everything in to this fbo => texture    ;
+    // draw everything in to this fbo => texture
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -36,7 +36,6 @@ ShadowMapFBO::ShadowMapFBO(GLuint width, GLuint height)
     // bind fbo to the screen buffer
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    
     
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
