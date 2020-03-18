@@ -16,9 +16,11 @@
 #include <string>
 #include <memory>
 
+#include "shader.h"
+
 #include "Object.h"
 #include "Cube.h"
-#include "shader.h"
+#include "PointCloud.h"
 #include "Particle.h"
 #include "Maze.h"
 #include "ShadowMapFBO.hpp"
@@ -39,6 +41,8 @@ public:
     static void updateParticles();
     static void setupGlow();
     static unsigned int loadTexture(char const * path);
+    
+    static void renderScene();
 };
 
 

@@ -12,55 +12,57 @@
  */
 namespace
 {
-	std::string windowTitle("GLFW Starter Project");
-    int width, height;
+std::string windowTitle("GLFW Starter Project");
+int width, height;
 
-	Cube* cube;
-    Maze* maze;
-	Object* currentObj; // The object currently displaying.
+Cube* cube;
+Maze* maze;
+Object* currentObj; // The object currently displaying.
 
-	glm::vec3 eye(0, 0, 20); // Camera position.
-	glm::vec3 center(0, 0, 0); // The point we are looking at.
-	glm::vec3 up(0, 1, 0); // The up direction of the camera.
+glm::vec3 cameraEye(0, 0, 20); // Camera position.
+glm::vec3 cameraCenter(0, 0, 0); // The point we are looking at.
+glm::vec3 cameraUp(0, 1, 0); // The up direction of the camera.
 
-	float fovy = 60;
-	float near = 1;
-	float far = 1000;
-	glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
-	glm::mat4 projection; // Projection matrix.
+float fovy = 60;
+float near = 1;
+float far = 1000;
+glm::mat4 view = glm::lookAt(cameraEye, cameraCenter, cameraUp); // View matrix, defined by eye, center and up.
+glm::mat4 projection; // Projection matrix.
 
-	GLuint program; // The shader program id.
-	GLuint projectionLoc; // Location of projection in shader.
-	GLuint viewLoc; // Location of view in shader.
-	GLuint modelLoc; // Location of model in shader.
-	GLuint colorLoc; // Location of color in shader.
-
-  GLuint shadowProg;
-
-    ShadowMapFBO *shadowMap;
-    GLuint shadowShader;
-
-    int dir = 0;
-
+int dir = 0;
 
 bool collisionToggle = true;
 bool particleToggle = true;
-bool cubeDraw = true;
+bool cubeDraw = false;
 
-    GLuint program; // The shader program id.
-    GLuint particleProg;
-    GLuint glowBlurProg;
+
+GLuint program; // The shader program id.
+GLuint projectionLoc; // Location of projection in shader.
+GLuint viewLoc; // Location of view in shader.
+GLuint modelLoc; // Location of model in shader.
+GLuint colorLoc; // Location of color in shader.
+
+GLuint shadowProg;
+
+ShadowMapFBO *shadowMap;
+GLuint shadowShader;
+
+
+GLuint particleProg;
+
+GLuint glowBlurProg;
+
 GLuint blurProg;
-    GLuint glowProg;
-    unsigned int framebuffer;
+
+GLuint glowProg;
+
+unsigned int framebuffer;
+
 PointCloud* cloud;
 ParticleGenerator* generator;
 unsigned int quadVAO;
 unsigned int colorBuffers[2];
 unsigned int textureColorbuffer;
-
-//unsigned int cubeTexture = loadTexture(FileSystem::getPath("images/marble.jpg").c_str());
-
 };
 
 bool Window::initializeProgram()
@@ -71,35 +73,24 @@ bool Window::initializeProgram()
     glowBlurProg = LoadShaders("shaders/lighting.vert", "shaders/lighting.frag");
     glowProg = LoadShaders("shaders/glow.vert", "shaders/glow.frag");
     blurProg = LoadShaders("shaders/blur.vert", "shaders/blur.frag");
-
-
-    
-    glUniform1d(glGetAttribLocation(glowProg, "scene"), 0);
-    glUniform1d(glGetAttribLocation(glowProg, "bloomBlur"), 1);
     
     // Check the shader program.
-    if (!program)
+    if (!program || !particleProg || !glowBlurProg || !glowProg || !blurProg)
     {
-        std::cerr << "Failed to initialize shader program" << std::endl;
+        std::cerr << "Failed to initialize a shader program" << std::endl;
         return false;
     }
 
-    if (!particleProg)
-    {
-        std::cerr << "Failed to initialize lighting program" << std::endl;
-        return false;
-    }
-
+    glUniform1d(glGetAttribLocation(glowProg, "scene"), 0);
+    glUniform1d(glGetAttribLocation(glowProg, "bloomBlur"), 1);
     
     generator = new ParticleGenerator();
 //    setupGlow();
     return true;
 }
 
-void Window::setupGlow() {
-    int SCR_WIDTH=640;
-    int SCR_HEIGHT=480;
-    
+void Window::setupGlow()
+{
     float quadVertices[] = {
         // positions        // texture Coords
         -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
@@ -126,7 +117,7 @@ void Window::setupGlow() {
     for (unsigned int i = 0; i < 2; i++)
     {
         glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
@@ -137,7 +128,7 @@ void Window::setupGlow() {
     
     glGenTextures(1, &textureColorbuffer);
     glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
@@ -145,27 +136,25 @@ void Window::setupGlow() {
     unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height); // use a single renderbuffer object for both a depth AND stencil buffer.
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
     // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
 }
 
 
 
 bool Window::initializeObjects()
 {
-//    // Create a cube of size 5.
-    cube = new Cube(10.0f);
-
+    // Create a dragon sprite which the user will navigate
     cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
     cloud->scale(glm::vec3(1.0f));
     cloud->translate(glm::vec3(-12,-0.75f,0));
 
-
+    // Create a cube of size 5.
+    cube = new Cube(10.0f);
     cube->scale(glm::vec3(0.2f, 0.2f, 0.05f));
     cube->translate(glm::vec3(-12,0,0));
     
@@ -270,30 +259,38 @@ void Window::idleCallback()
 
 void Window::displayCallback(GLFWwindow* window)
 {
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+//    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
     // make sure we clear the framebuffer's content
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-
+    
+    // Particle Effect
+    // ---------------
     glUseProgram(particleProg);
     glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
     if(particleToggle)
+    {
         generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
+    }
 
     
-    
+    // Draw Maze
+    // ---------
     glUseProgram(program);
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+    maze->draw(program);
     
-    if(!cubeDraw) {
+    
+    // Draw User Sprite
+    // ------------------
+    glUseProgram(program);
+    if(cubeDraw)
+    {
         glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
         glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
         cube->draw();

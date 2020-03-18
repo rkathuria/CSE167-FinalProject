@@ -15,16 +15,16 @@
 using namespace std;
 
 #include "Object.h"
- class PointCloud : public Object
+class PointCloud : public Object
 {
 private:
-	std::vector<glm::vec3> points;
+    std::vector<glm::vec3> points;
     std::vector<glm::vec3> pointsNormal;
     glm::vec3 spinDirection;
-	GLuint vao, vbo, vbon, ebof;
-	GLfloat pointSize;
+    GLuint vao, vbo, vbon, ebof;
+    GLfloat pointSize;
     glm::vec3 distanceFromCenter;
-
+    
     float degrees;
     glm::vec3 originScale;
     std::vector<unsigned int> triangles;
@@ -33,17 +33,17 @@ private:
     glm::vec3 average;
     glm::vec3 locationOfObj;
 public:
-	PointCloud(std::string objFilename, GLfloat pointSize);
-	~PointCloud();
+    PointCloud(std::string objFilename, GLfloat pointSize);
+    ~PointCloud();
     
     void setColor(glm::vec3 c);
-
-
-	void draw();
-	void update();
+    
+    
+    void draw();
+    void update();
     glm::vec3 location;
-	void updatePointSize(GLfloat size);
-	void spin(float deg);
+    void updatePointSize(GLfloat size);
+    void spin(float deg);
     void translate(glm::vec3 dir);
     void translateHelper(glm::vec3 dir);
     void backToCenter();

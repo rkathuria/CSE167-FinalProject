@@ -39,8 +39,8 @@ public:
     void renderDepthMap(GLuint width, GLuint height);
     
 private:
-    GLuint fbo;
-    GLuint depthmapTextureId;
+    GLuint depthMap;
+    GLuint depthMapFBO;
 };
 
 #endif /* ShadowMapFBO_hpp */
