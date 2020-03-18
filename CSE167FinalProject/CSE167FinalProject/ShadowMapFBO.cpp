@@ -19,8 +19,6 @@ ShadowMapFBO::ShadowMapFBO(GLuint width, GLuint height)
     
     // Generate framebuffer
     glGenFramebuffers(1, &depthMapFBO);
-    // bind fbo to texture
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     
     // draw everything in to this fbo => texture
     glGenTextures(1, &depthMap);

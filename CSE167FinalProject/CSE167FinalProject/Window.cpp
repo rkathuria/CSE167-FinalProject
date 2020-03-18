@@ -275,8 +275,7 @@ void Window::displayCallback(GLFWwindow* window)
     
     // Shadow Mapping
     // --------------
-//    glUseProgram(shadowProg);
-    glUseProgram(program);
+    glUseProgram(depthProg);
     lightPosition = cloud->location;
     switch (dir)
     {
@@ -297,33 +296,33 @@ void Window::displayCallback(GLFWwindow* window)
     glm::mat4 lightView = glm::lookAt(lightPosition, lightCenter, lightUp);
     std::cout << "Light Values\n" << "\tposition: " << glm::to_string(lightPosition) << "\n\tcenter: " << glm::to_string(lightCenter) << std::endl;
     glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-//    glUniformMatrix4fv(glGetUniformLocation(depthProg, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-//    maze->draw(depthProg);
+    glUniformMatrix4fv(glGetUniformLocation(depthProg, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+    maze->draw(glGetUniformLocation(depthProg, "model"), NULL);
 
 //    glUniformMatrix4fv(glGetUniformLocation(program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 //    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
     
     
-    // Particle Effect
-    // ---------------
-    glUseProgram(particleProg);
-    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
-
-    if(particleToggle)
-    {
-        generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
-    }
-
-
-    // Draw Maze
-    // ---------
-    glUseProgram(program);
-    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
-
-
+//    // Particle Effect
+//    // ---------------
+//    glUseProgram(particleProg);
+//    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+//    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
+//
+//    if(particleToggle)
+//    {
+//        generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
+//    }
+//
+//
+//    // Draw Maze
+//    // ---------
+//    glUseProgram(program);
+//    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+//    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+//    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+//
+//
 //    // Draw User Sprite
 //    // ------------------
 //    glUseProgram(program);
