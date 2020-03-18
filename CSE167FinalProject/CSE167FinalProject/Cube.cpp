@@ -7,7 +7,7 @@ Cube::Cube(float size)
 	model = glm::scale(glm::vec3(size / 2.f));
 
 	// The color of the cube. Try setting it to something else!
-	color = glm::vec3(1.0f, 0.95f, 0.1f);
+	color = glm::vec3(1.0f, 1.0f, 0.1f);
 
     location = glm::vec3(0,0,0);
 	/*
@@ -86,31 +86,7 @@ Cube::Cube(float size)
 	// Unbind from the VAO.
 	glBindVertexArray(0);
     
-//
-//    // set up floating point framebuffer to render scene to
-//    unsigned int hdrFBO;
-//    glGenFramebuffers(1, &hdrFBO);
-//    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
-//    unsigned int colorBuffers[2];
-//    glGenTextures(2, colorBuffers);
-//    for (unsigned int i = 0; i < 2; i++)
-//    {
-//        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
-//        glTexImage2D(
-//            GL_TEXTURE_2D, 0, GL_RGB16F, 480, 640, 0, GL_RGB, GL_FLOAT, NULL
-//        );
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//        // attach texture to framebuffer
-//        glFramebufferTexture2D(
-//            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0
-//        );
-//    }
-//
-//    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-//    glDrawBuffers(2, attachments);
+
 }
 
 Cube::~Cube()
@@ -152,4 +128,8 @@ void Cube::scale(glm::vec3 dir) {
 void Cube::translate(glm::vec3 dir) {
     location += dir;
     model = glm::translate(dir) * model;
+}
+
+void Cube::setColor(glm::vec3 c) {
+    color = c;
 }

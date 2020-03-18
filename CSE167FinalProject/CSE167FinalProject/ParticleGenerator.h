@@ -24,7 +24,7 @@ public:
     ParticleGenerator();
     void update(glm::vec2 loc, int dir);
     void draw(GLuint posLoc, GLuint colorLoc);
-    int nr_particles = 100;
+    int nr_particles = 200;
     std::vector<Particle> particles;
     GLuint FirstUnusedParticle();
     void RespawnParticle(Particle &particle, glm::vec2 loc, glm::vec2 offset);
