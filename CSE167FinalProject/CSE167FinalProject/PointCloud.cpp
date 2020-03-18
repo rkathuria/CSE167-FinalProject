@@ -20,7 +20,7 @@ PointCloud::PointCloud(std::string objFilename, GLfloat pointSize)
     
     
     
-    if(objFilename.compare("bunny.obj") == 0)
+    if (objFilename.compare("bunny.obj") == 0)
         spinDirection = glm::vec3(0.0f, 1.0f, 0.0f);
     else
         spinDirection = glm::vec3(1.0f, 0.0f, 0.0f);
