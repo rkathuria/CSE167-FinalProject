@@ -22,13 +22,19 @@ using namespace std;
 {
 public:
     ParticleGenerator();
-    void update();
+    void update(glm::vec2 loc, int dir);
     void draw(GLuint posLoc, GLuint colorLoc);
-    int nr_particles = 100;
+    int nr_particles = 200;
     std::vector<Particle> particles;
     GLuint FirstUnusedParticle();
-    void RespawnParticle(Particle &particle, glm::vec2 offset);
+    void RespawnParticle(Particle &particle, glm::vec2 loc, glm::vec2 offset);
 	
+    glm::vec2 dirs[4] = {
+        glm::vec2(-1.2f, 0.0f),
+        glm::vec2(0.0f, -1.2f),
+        glm::vec2(1.2f, 0.0f),
+        glm::vec2(0.0f, 1.2f),
+    };
     
 };
 

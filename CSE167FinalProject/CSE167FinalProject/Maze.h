@@ -25,7 +25,8 @@ public:
 	Maze();
     Cube* cube;
     void draw(GLuint modelLoc, GLuint colorLoc);
-    void draw(GLuint shader);
+    bool checkCollision(float x, float y, float size, float x2, float y2, float size2);
+    bool checkCollision(glm::vec3 objLoc, float size);
     Cube* arr[100][100];
     int maze[10][10] =
     {

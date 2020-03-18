@@ -35,59 +35,139 @@ namespace
 	GLuint modelLoc; // Location of model in shader.
 	GLuint colorLoc; // Location of color in shader.
 
-    GLuint shadowProg;
+  GLuint shadowProg;
 
     ShadowMapFBO *shadowMap;
     GLuint shadowShader;
+
+    int dir = 0;
+
+
+bool collisionToggle = true;
+bool particleToggle = true;
+bool cubeDraw = true;
+
+    GLuint program; // The shader program id.
+    GLuint particleProg;
+    GLuint glowBlurProg;
+GLuint blurProg;
+    GLuint glowProg;
+    unsigned int framebuffer;
+PointCloud* cloud;
+ParticleGenerator* generator;
+unsigned int quadVAO;
+unsigned int colorBuffers[2];
+unsigned int textureColorbuffer;
+
+//unsigned int cubeTexture = loadTexture(FileSystem::getPath("images/marble.jpg").c_str());
+
 };
 
 bool Window::initializeProgram()
 {
-	// Create a shader program with a vertex shader and a fragment shader.
-	program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
-	// Check the shader program.
-	if (!program)
-	{
-		std::cerr << "Failed to initialize shader program" << std::endl;
-		return false;
-	}
+    // Create a shader program with a vertex shader and a fragment shader.
+    program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
+    particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
+    glowBlurProg = LoadShaders("shaders/lighting.vert", "shaders/lighting.frag");
+    glowProg = LoadShaders("shaders/glow.vert", "shaders/glow.frag");
+    blurProg = LoadShaders("shaders/blur.vert", "shaders/blur.frag");
 
-	// Activate the shader program.
-	glUseProgram(program);
+
     
-	// Get the locations of uniform variables.
-	projectionLoc = glGetUniformLocation(program, "projection");
-	viewLoc = glGetUniformLocation(program, "view");
-	modelLoc = glGetUniformLocation(program, "model");
-	colorLoc = glGetUniformLocation(program, "color");
+    glUniform1d(glGetAttribLocation(glowProg, "scene"), 0);
+    glUniform1d(glGetAttribLocation(glowProg, "bloomBlur"), 1);
     
-    
-    // Create the shadow shader program
-    shadowShader = LoadShaders("shaders/shadow.vert", "shaders/shadow.frag");
-    if (!shadowShader) {
-        std::cerr << "Failed to initialize the shadow shader program" << std::endl;
+    // Check the shader program.
+    if (!program)
+    {
+        std::cerr << "Failed to initialize shader program" << std::endl;
         return false;
     }
-    
 
-	return true;
+    if (!particleProg)
+    {
+        std::cerr << "Failed to initialize lighting program" << std::endl;
+        return false;
+    }
+
+    
+    generator = new ParticleGenerator();
+//    setupGlow();
+    return true;
+}
+
+void Window::setupGlow() {
+    int SCR_WIDTH=640;
+    int SCR_HEIGHT=480;
+    
+    float quadVertices[] = {
+        // positions        // texture Coords
+        -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+         1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+         1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+    // setup plane VAO
+    unsigned int quadVBO;
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // attach texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+    
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+    // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
 }
 
 
 
 bool Window::initializeObjects()
 {
-    // Create a cube of size 5.
-    cube = new Cube(5.0f);
-    
-//    scene = new Scene(width, height, shadowProg);
-//
-//    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
-//    // Set cube to be the first to display
-//    currentObj = cloud;
+//    // Create a cube of size 5.
+    cube = new Cube(10.0f);
 
-//    cloud->scale(glm::vec3(8,8,8));
-//    cloud->translate(glm::vec3(0,-5,0));
+    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
+    cloud->scale(glm::vec3(1.0f));
+    cloud->translate(glm::vec3(-12,-0.75f,0));
+
+
+    cube->scale(glm::vec3(0.2f, 0.2f, 0.05f));
+    cube->translate(glm::vec3(-12,0,0));
     
     maze = new Maze();
 
@@ -97,11 +177,15 @@ bool Window::initializeObjects()
 
 void Window::cleanUp()
 {
-	// Deallcoate the objects.
-	delete cube;
+    // Deallcoate the objects.
+    delete generator;
+    delete cube;
+    delete cloud;
+    delete maze;
 
-	// Delete the shader program.
-	glDeleteProgram(program);
+    // Delete the shader program.
+    glDeleteProgram(program);
+    glDeleteProgram(particleProg);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -179,80 +263,64 @@ void Window::resizeCallback(GLFWwindow* window, int w, int h)
 
 void Window::idleCallback()
 {
-//    generator->update();
+
+    generator->update(glm::vec2(cube->location[0], cube->location[1]), dir);
 
 }
 
 void Window::displayCallback(GLFWwindow* window)
 {
-    // Clear the color and depth buffers.
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+
+    // make sure we clear the framebuffer's content
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    float near_plane = 1.f, far_plane = 7.5f;
-    
-    //TODO: capture light position as it traverses through the maze
-    glm::vec3 lightPos(0, 0, 1);
-    glm::vec3 finishPos(0.f);
+
+    glUseProgram(particleProg);
+    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
+    if(particleToggle)
+        generator->draw(glGetUniformLocation(particleProg, "offset"), glGetUniformLocation(particleProg, "color"));
 
     
-    // Compute projections from the light's perspective
-    glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
-    
-    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f), glm::vec3(0,0,1));
-    glm::mat4 lightSpaceMatrix  = lightProjection * lightView;
-    
-    
-    // render scene from the light's pov
-    // ---------------------------------
-    glUseProgram(shadowProg);
-    glUniformMatrix4fv(glGetUniformLocation(shadowProg, "depthMVP"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-    
-//    cube->draw();
-    
-//    glm::vec3 lightInvDir = glm::vec3(-8,4,0);
-
-    // Compute the MVP matrix from the light's point of view
-//    glm::mat4 depthProjectionMatrix = glm::ortho<float>(-10,10,-10,10,-10,20);
-//    glm::mat4 depthViewMatrix = glm::lookAt(lightInvDir, glm::vec3(0,0,0), glm::vec3(0,1,0));
-//    glm::mat4 depthModelMatrix = glm::mat4(1.0);
-//    glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-
-    // Send our transformation to the currently bound shader,
-    // in the "MVP" uniform
-//    glUseProgram(shadowShader);
-//    glUniformMatrix4fv(glGetUniformLocation(shadowProg, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
-    
-    glm::mat4 pointlightView = glm::lookAt(eye, center, up);
     
     glUseProgram(program);
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
-//    glUniform3f(glGetUniformLocation(shader,"color"), 1, 1, 1);
-//    cube->draw();
+    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
     
+    if(!cubeDraw) {
+        glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+        glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
+        cube->draw();
+    }
+    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cloud->getModel()));
+    glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cloud->getColor()));
+    cloud->draw();
     
-//    shadowMap->draw();
-    
-    
-    
-//    glm::mat4 aerialView = glm::lookAt(glm::vec3(0,0,20), glm::vec3(0,0,0), glm::vec3(0,1,20));
-    
-    //DRAWING PARTICLES
-//    glUseProgram(particleProg);
-//    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-//    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
 
+//    glUseProgram(glowBlurProg);
+//    glBindVertexArray(quadVAO);
+//    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);    // use the color attachment texture as the texture of the quad plane
+//    glDrawArrays(GL_TRIANGLES, 0, 6);
+//    
+//    
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    glUseProgram(glowProg);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+//    glBindVertexArray(quadVAO);
+//    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+//    glBindVertexArray(0);
     
-    
-    //DRAWING MAZE
-//    glUseProgram(program);
-
-    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    maze->draw(program);
-    
-    // Gets events, including input such as keyboard and mouse or window resizing.
     glfwPollEvents();
     // Swap buffers.
     glfwSwapBuffers(window);
@@ -282,11 +350,71 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
                 // Set currentObj to cube
                 currentObj = cube;
                 break;
-            case GLFW_KEY_G:
-//                cloud->translate(glm::vec3(2,0,0));
+            case GLFW_KEY_A:
+                cube->translate(glm::vec3(-1,0,0));
+                cloud->translate(glm::vec3(-1,0,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle) {
+                    cube->translate(glm::vec3(1,0,0));
+                    cloud->translate(glm::vec3(1,0,0));
+                    cube->setColor(glm::vec3(1,0,0));
+                    cloud->setColor(glm::vec3(1,0,0));
+                }
+                else
+                    dir = 2;
                 break;
+            case GLFW_KEY_S:
+                cube->translate(glm::vec3(0,-1,0));
+                cloud->translate(glm::vec3(0,-1,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle) {
+                    cube->translate(glm::vec3(0,1,0));
+                    cloud->translate(glm::vec3(0,1,0));
+                    cube->setColor(glm::vec3(1,0,0));
+                    cloud->setColor(glm::vec3(1,0,0));
+
+                }
+                else
+                    dir = 3;
+                break;
+            case GLFW_KEY_W:
+                cube->translate(glm::vec3(0,1,0));
+                cloud->translate(glm::vec3(0,1,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle) {
+                    cube->translate(glm::vec3(0,-1,0));
+                    cloud->translate(glm::vec3(0,-1,0));
+                    cube->setColor(glm::vec3(1,0,0));
+                    cloud->setColor(glm::vec3(1,0,0));
+
+                }
+                else
+                    dir = 1;
+                break;
+            case GLFW_KEY_D:
+                cube->translate(glm::vec3(1,0,0));
+                cloud->translate(glm::vec3(1,0,0));
+                if(maze->checkCollision(cube->location, 1) && collisionToggle) {
+                    cube->translate(glm::vec3(-1,0,0));
+                    cloud->translate(glm::vec3(-1,0,0));
+                    cube->setColor(glm::vec3(1,0,0));
+                    cloud->setColor(glm::vec3(1,0,0));
+
+                }
+                else
+                    dir = 0;
+                break;
+                
+            case GLFW_KEY_P:
+                particleToggle = !particleToggle;
+                break;
+            case GLFW_KEY_C:
+                collisionToggle = !collisionToggle;
+                break;
+            case GLFW_KEY_V:
+                cubeDraw = !cubeDraw;
+                break;
+
             default:
                 break;
         }
     }
 }
+
