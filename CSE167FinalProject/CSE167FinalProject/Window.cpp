@@ -13,53 +13,53 @@
 namespace
 {
 	std::string windowTitle("GLFW Starter Project");
+    int width, height;
 
 	Cube* cube;
+    Maze* maze;
 	Object* currentObj; // The object currently displaying.
 
 	glm::vec3 eye(0, 0, 20); // Camera position.
 	glm::vec3 center(0, 0, 0); // The point we are looking at.
 	glm::vec3 up(0, 1, 0); // The up direction of the camera.
+
 	float fovy = 60;
 	float near = 1;
 	float far = 1000;
 	glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
 	glm::mat4 projection; // Projection matrix.
 
-	GLuint shader; // The shader program id.
+	GLuint program; // The shader program id.
 	GLuint projectionLoc; // Location of projection in shader.
 	GLuint viewLoc; // Location of view in shader.
 	GLuint modelLoc; // Location of model in shader.
 	GLuint colorLoc; // Location of color in shader.
 
-    Scene *scene;
+    GLuint shadowProg;
+
+    ShadowMapFBO *shadowMap;
     GLuint shadowShader;
 };
-
-namespace app
-{
-    int width, height;
-}
 
 bool Window::initializeProgram()
 {
 	// Create a shader program with a vertex shader and a fragment shader.
-	shader = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
+	program = LoadShaders("shaders/shader.vert", "shaders/shader.frag");
 	// Check the shader program.
-	if (!shader)
+	if (!program)
 	{
 		std::cerr << "Failed to initialize shader program" << std::endl;
 		return false;
 	}
 
 	// Activate the shader program.
-	glUseProgram(shader);
+	glUseProgram(program);
     
 	// Get the locations of uniform variables.
-	projectionLoc = glGetUniformLocation(shader, "projection");
-	viewLoc = glGetUniformLocation(shader, "view");
-	modelLoc = glGetUniformLocation(shader, "model");
-	colorLoc = glGetUniformLocation(shader, "color");
+	projectionLoc = glGetUniformLocation(program, "projection");
+	viewLoc = glGetUniformLocation(program, "view");
+	modelLoc = glGetUniformLocation(program, "model");
+	colorLoc = glGetUniformLocation(program, "color");
     
     
     // Create the shadow shader program
@@ -79,6 +79,8 @@ bool Window::initializeObjects()
 {
     // Create a cube of size 5.
     cube = new Cube(5.0f);
+    
+//    scene = new Scene(width, height, shadowProg);
 //
 //    cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
 //    // Set cube to be the first to display
@@ -87,7 +89,7 @@ bool Window::initializeObjects()
 //    cloud->scale(glm::vec3(8,8,8));
 //    cloud->translate(glm::vec3(0,-5,0));
     
-//    maze = new Maze();
+    maze = new Maze();
 
     return true;
 }
@@ -99,7 +101,7 @@ void Window::cleanUp()
 	delete cube;
 
 	// Delete the shader program.
-	glDeleteProgram(shader);
+	glDeleteProgram(program);
 }
 
 GLFWwindow* Window::createWindow(int width, int height)
@@ -163,16 +165,16 @@ void Window::resizeCallback(GLFWwindow* window, int w, int h)
 {
 #ifdef __APPLE__
 	// In case your Mac has a retina display.
-	glfwGetFramebufferSize(window, &app::width, &app::height);
+	glfwGetFramebufferSize(window, &width, &height);
 #endif
-	app::width = w;
-	app::height = h;
+	width = w;
+	height = h;
 	// Set the viewport size.
-	glViewport(0, 0, app::width, app::height);
+	glViewport(0, 0, width, height);
 
 	// Set the projection matrix.
 	projection = glm::perspective(glm::radians(fovy),
-		(float)app::width / (float)app::height, near, far);
+		(float)width / (float)height, near, far);
 }
 
 void Window::idleCallback()
@@ -186,38 +188,79 @@ void Window::displayCallback(GLFWwindow* window)
     // Clear the color and depth buffers.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glUseProgram(shader);
+    float near_plane = 1.f, far_plane = 7.5f;
+    
+    //TODO: capture light position as it traverses through the maze
+    glm::vec3 lightPos(0, 0, 1);
+    glm::vec3 finishPos(0.f);
+
+    
+    // Compute projections from the light's perspective
+    glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+    
+    glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f), glm::vec3(0,0,1));
+    glm::mat4 lightSpaceMatrix  = lightProjection * lightView;
+    
+    
+    // render scene from the light's pov
+    // ---------------------------------
+    glUseProgram(shadowProg);
+    glUniformMatrix4fv(glGetUniformLocation(shadowProg, "depthMVP"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+    
+//    cube->draw();
+    
+//    glm::vec3 lightInvDir = glm::vec3(-8,4,0);
+
+    // Compute the MVP matrix from the light's point of view
+//    glm::mat4 depthProjectionMatrix = glm::ortho<float>(-10,10,-10,10,-10,20);
+//    glm::mat4 depthViewMatrix = glm::lookAt(lightInvDir, glm::vec3(0,0,0), glm::vec3(0,1,0));
+//    glm::mat4 depthModelMatrix = glm::mat4(1.0);
+//    glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+
+    // Send our transformation to the currently bound shader,
+    // in the "MVP" uniform
+//    glUseProgram(shadowShader);
+//    glUniformMatrix4fv(glGetUniformLocation(shadowProg, "depthMVP"), 1, GL_FALSE, &depthMVP[0][0]);
     
     glm::mat4 pointlightView = glm::lookAt(eye, center, up);
     
-    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
-    glUniform3f(glGetUniformLocation(shader,"color"), 1, 1, 1);
-    cube->draw();
+    glUseProgram(program);
+    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
+//    glUniform3f(glGetUniformLocation(shader,"color"), 1, 1, 1);
+//    cube->draw();
     
     
-    glm::mat4 aerialView = glm::lookAt(glm::vec3(0,0,20), glm::vec3(0,0,0), glm::vec3(0,1,20));
+//    shadowMap->draw();
+    
+    
+    
+//    glm::mat4 aerialView = glm::lookAt(glm::vec3(0,0,20), glm::vec3(0,0,0), glm::vec3(0,1,20));
     
     //DRAWING PARTICLES
 //    glUseProgram(particleProg);
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 //    glUniformMatrix4fv(glGetUniformLocation(particleProg, "view"), 1, GL_FALSE, glm::value_ptr(view));
-////
-//    generator->draw(glGetUniformLocation(shadowProg, "offset"), glGetUniformLocation(shadowProg, "color"));
 
     
     
     //DRAWING MAZE
 //    glUseProgram(program);
-//
-//    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-//    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-//    maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
+
+    glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    maze->draw(program);
+    
     // Gets events, including input such as keyboard and mouse or window resizing.
     glfwPollEvents();
     // Swap buffers.
     glfwSwapBuffers(window);
+}
+
+void Window::renderScene()
+{
+    
 }
 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)

@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		13158EE124184CA500FC3E9C /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13158EDF24184CA500FC3E9C /* Scene.cpp */; };
 		13158EE52418698200FC3E9C /* Render.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13158EE32418698200FC3E9C /* Render.cpp */; };
+		13429991241F7063005F3693 /* ShadowMapFBO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1342998F241F7063005F3693 /* ShadowMapFBO.cpp */; };
+		13429994241FF565005F3693 /* Maze.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 13429993241FF565005F3693 /* Maze.cpp */; };
 		13F4B59B241B0756003E4526 /* shadow.vert in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13158EDE24184A3500FC3E9C /* shadow.vert */; };
 		13F4B59C241B0756003E4526 /* shadow.frag in CopyFiles */ = {isa = PBXBuildFile; fileRef = 13158EE224185E5000FC3E9C /* shadow.frag */; };
 		857CDAEA240DCE44002179CD /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 857CDAE9240DCE44002179CD /* main.cpp */; };
@@ -39,11 +40,13 @@
 
 /* Begin PBXFileReference section */
 		13158EDE24184A3500FC3E9C /* shadow.vert */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shadow.vert; sourceTree = "<group>"; };
-		13158EDF24184CA500FC3E9C /* Scene.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Scene.cpp; sourceTree = "<group>"; };
-		13158EE024184CA500FC3E9C /* Scene.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Scene.hpp; sourceTree = "<group>"; };
 		13158EE224185E5000FC3E9C /* shadow.frag */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.glsl; path = shadow.frag; sourceTree = "<group>"; };
 		13158EE32418698200FC3E9C /* Render.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Render.cpp; sourceTree = "<group>"; };
 		13158EE42418698200FC3E9C /* Render.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Render.hpp; sourceTree = "<group>"; };
+		1342998F241F7063005F3693 /* ShadowMapFBO.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ShadowMapFBO.cpp; sourceTree = "<group>"; };
+		13429990241F7063005F3693 /* ShadowMapFBO.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ShadowMapFBO.hpp; sourceTree = "<group>"; };
+		13429992241FF565005F3693 /* Maze.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Maze.h; sourceTree = "<group>"; };
+		13429993241FF565005F3693 /* Maze.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Maze.cpp; sourceTree = "<group>"; };
 		857CDAE6240DCE44002179CD /* CSE167FinalProject */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CSE167FinalProject; sourceTree = BUILT_PRODUCTS_DIR; };
 		857CDAE9240DCE44002179CD /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		857CDAF0240DCE6F002179CD /* Cube.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Cube.h; sourceTree = "<group>"; };
@@ -76,6 +79,8 @@
 		13158EDB241847BF00FC3E9C /* elements */ = {
 			isa = PBXGroup;
 			children = (
+				13429993241FF565005F3693 /* Maze.cpp */,
+				13429992241FF565005F3693 /* Maze.h */,
 				857CDAF1240DCE6F002179CD /* Cube.cpp */,
 				857CDAF0240DCE6F002179CD /* Cube.h */,
 				857CDAF6240DCE6F002179CD /* Object.h */,
@@ -100,8 +105,8 @@
 		13158EDD2418493900FC3E9C /* shadows */ = {
 			isa = PBXGroup;
 			children = (
-				13158EDF24184CA500FC3E9C /* Scene.cpp */,
-				13158EE024184CA500FC3E9C /* Scene.hpp */,
+				1342998F241F7063005F3693 /* ShadowMapFBO.cpp */,
+				13429990241F7063005F3693 /* ShadowMapFBO.hpp */,
 			);
 			path = shadows;
 			sourceTree = "<group>";
@@ -216,8 +221,9 @@
 				13158EE52418698200FC3E9C /* Render.cpp in Sources */,
 				857CDAFC240DCE70002179CD /* Window.cpp in Sources */,
 				857CDAFD240DCE70002179CD /* shader.cpp in Sources */,
+				13429994241FF565005F3693 /* Maze.cpp in Sources */,
+				13429991241F7063005F3693 /* ShadowMapFBO.cpp in Sources */,
 				857CDAEA240DCE44002179CD /* main.cpp in Sources */,
-				13158EE124184CA500FC3E9C /* Scene.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

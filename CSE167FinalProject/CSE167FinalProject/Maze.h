@@ -25,6 +25,7 @@ public:
 	Maze();
     Cube* cube;
     void draw(GLuint modelLoc, GLuint colorLoc);
+    void draw(GLuint shader);
     Cube* arr[100][100];
     int maze[10][10] =
     {
