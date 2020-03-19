@@ -7,13 +7,12 @@ Maze::Maze()
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < cols; j++) {
             arr[i][j] = new Cube(10.0f);
-            
+
             float r = rand() / float(RAND_MAX);
-            float g = rand() / float(RAND_MAX);
-            float b = rand() / float(RAND_MAX);
-            arr[i][j]->setColor(glm::vec3(r,g,b));
-            
-            
+            float g = rand() / float(RAND_MAX) + 0.2;
+            float b = rand() / float(RAND_MAX) + 0.2;
+
+            arr[i][j]->setColor(glm::vec3(0,0,1));
             arr[i][j]->scale(glm::vec3(0.2f, 0.2f, 0.05f));
             arr[i][j]->translate(glm::vec3(2*i - rows + 1,2*j - cols + 1,0));
         }
@@ -31,7 +30,7 @@ bool Maze::checkCollision(glm::vec3 objLoc, float size) {
                     arr[i][j]->setColor(glm::vec3(1,0,0));
                 }
                 else {
-//                    arr[i][j]->setColor(glm::vec3(1,1,1));
+                    arr[i][j]->setColor(glm::vec3(0,0,1));
                 }
             }
         }
