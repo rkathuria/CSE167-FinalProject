@@ -254,9 +254,7 @@ void Window::resizeCallback(GLFWwindow* window, int w, int h)
 
 void Window::idleCallback()
 {
-
     generator->update(glm::vec2(cube->location[0], cube->location[1]), dir);
-
 }
 
 void Window::displayCallback(GLFWwindow* window)
