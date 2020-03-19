@@ -2,4 +2,7 @@
 *Icon?
 *.DS_Store
 
-# Workspace
+# Workspace files
+CSE167FinalProject/CSE167FinalProject.xcodeproj/xcshareddata/
+CSE167FinalProject/CSE167FinalProject.xcodeproj/project.xcworkspace/xcuserdata/
+CSE167FinalProject/CSE167FinalProject.xcodeproj/project.xcworkspace/xcshareddata/

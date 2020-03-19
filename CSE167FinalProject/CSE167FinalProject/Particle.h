@@ -32,7 +32,7 @@ public:
     Particle(glm::vec2 pos, glm::vec2 vel, glm::vec4 color, GLfloat life);
     Particle();
     ~Particle();
-
+    
     void draw();
     void update();
     void init();
@@ -41,7 +41,7 @@ public:
     glm::vec2 vel;
     glm::vec4 color;
     GLfloat life;
-
+    
 };
 
 

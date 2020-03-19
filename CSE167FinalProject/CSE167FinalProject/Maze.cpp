@@ -7,6 +7,11 @@ Maze::Maze()
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < cols; j++) {
             arr[i][j] = new Cube(10.0f);
+
+            float r = rand() / float(RAND_MAX);
+            float g = rand() / float(RAND_MAX) + 0.2;
+            float b = rand() / float(RAND_MAX) + 0.2;
+
             arr[i][j]->setColor(glm::vec3(0,0,1));
             arr[i][j]->scale(glm::vec3(0.2f, 0.2f, 0.05f));
             arr[i][j]->translate(glm::vec3(2*i - rows + 1,2*j - cols + 1,0));
@@ -47,11 +52,19 @@ void Maze::draw(GLuint modelLoc, GLuint colorLoc) {
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < cols; j++) {
             if(maze[i][j] == 1) {
-                glUniformMatrix4fv(modelLoc, 1, GL_FALSE,   glm::value_ptr(arr[i][j]->getModel()));
-                glUniform3fv(colorLoc, 1, glm::value_ptr(arr[i][j]->getColor()));
+                if (modelLoc != NULL)
+                {
+                    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(arr[i][j]->getModel()));
+                }
+                
+                if (colorLoc != NULL)
+                {
+                    glUniform3fv(colorLoc, 1, glm::value_ptr(arr[i][j]->getColor()));
+                }
+                
                 arr[i][j]->draw();
             }
-                        
+            
         }
     }
 }

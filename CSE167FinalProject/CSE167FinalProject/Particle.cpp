@@ -35,20 +35,20 @@ Particle::Particle() {
 
 void Particle::init() {
     GLuint vbo;
-//    GLfloat particle_quad[] = {
-//        0.0f, 1.0f, 0.0f, 1.0f,
-//        1.0f, 0.0f, 1.0f, 0.0f,
-//        0.0f, 0.0f, 0.0f, 0.0f,
-//
-//        0.0f, 1.0f, 0.0f, 1.0f,
-//        1.0f, 1.0f, 1.0f, 1.0f,
-//        1.0f, 0.0f, 1.0f, 0.0f
-//    };
+    //    GLfloat particle_quad[] = {
+    //        0.0f, 1.0f, 0.0f, 1.0f,
+    //        1.0f, 0.0f, 1.0f, 0.0f,
+    //        0.0f, 0.0f, 0.0f, 0.0f,
+    //
+    //        0.0f, 1.0f, 0.0f, 1.0f,
+    //        1.0f, 1.0f, 1.0f, 1.0f,
+    //        1.0f, 0.0f, 1.0f, 0.0f
+    //    };
     GLfloat particle_quad[] = {
         -0.05f, 0.05f, 0.0f, 1.0f,
         0.05f, -0.05f, 1.0f, 0.0f,
         -0.05f, -0.05f, 0.0f, 0.0f,
-
+        
         -0.05f, 0.05f, 0.0f, 1.0f,
         0.05f, 0.05f, 1.0f, 1.0f,
         0.05f, -0.05f, 1.0f, 0.0f
@@ -64,14 +64,14 @@ void Particle::init() {
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
     glBindVertexArray(0);
     
-
+    
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     // set the texture wrapping/filtering options (on the currently bound texture object)
-
+    
     // load and generate the texture
     int width, height, nrChannels;
-//    std::string filePath = "images/particle.png";
+    //    std::string filePath = "images/particle.png";
     unsigned char *data = stbi_load("images/particle6.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
@@ -93,9 +93,9 @@ void Particle::init() {
 
 Particle::~Particle()
 {
-//    // Delete the VBOs and the VAO.
-//    glDeleteBuffers(2, vbos);
-//    glDeleteVertexArrays(1, &vao);
+    //    // Delete the VBOs and the VAO.
+    //    glDeleteBuffers(2, vbos);
+    //    glDeleteVertexArrays(1, &vao);
 }
 
 void Particle::draw() {

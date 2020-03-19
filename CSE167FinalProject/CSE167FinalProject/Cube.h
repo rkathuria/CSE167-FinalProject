@@ -16,21 +16,21 @@
 class Cube : public Object
 {
 private:
-	GLuint vao;
-	GLuint vbos[2];
+    GLuint vao;
+    GLuint vbos[2];
 public:
-	Cube(float size);
-	~Cube();
+    Cube(float size);
+    ~Cube();
     
     glm::vec3 location;
-
-	void draw();
-	void update();
+    
+    void draw();
+    void update();
     void scale(glm::vec3 dir);
     void translate(glm::vec3 dir);
     void setColor(glm::vec3 c);
-
-	void spin(float deg);
+    
+    void spin(float deg);
 };
 
 #endif

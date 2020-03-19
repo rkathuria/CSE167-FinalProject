@@ -18,7 +18,7 @@
 #include "Particle.h"
 using namespace std;
 
- class ParticleGenerator
+class ParticleGenerator
 {
 public:
     ParticleGenerator();
@@ -28,7 +28,7 @@ public:
     std::vector<Particle> particles;
     GLuint FirstUnusedParticle();
     void RespawnParticle(Particle &particle, glm::vec2 loc, glm::vec2 offset);
-	
+    
     glm::vec2 dirs[4] = {
         glm::vec2(-1.2f, 0.0f),
         glm::vec2(0.0f, -1.2f),

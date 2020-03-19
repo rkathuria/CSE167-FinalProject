@@ -12,33 +12,50 @@
  */
 namespace
 {
-int width, height;
 std::string windowTitle("GLFW Starter Project");
+int width, height;
 
 Cube* cube;
 Maze* maze;
-    Object* currentObj; // The object currently displaying.
+Object* currentObj; // The object currently displaying.
 
-    glm::vec3 eye(0, 0, 20); // Camera position.
-    glm::vec3 center(0, 0, 0); // The point we are looking at.
-    glm::vec3 up(0, 1, 0); // The up direction of the camera.
-    float fovy = 60;
-    float near = 1;
-    float far = 1000;
-    glm::mat4 view = glm::lookAt(eye, center, up); // View matrix, defined by eye, center and up.
-    glm::mat4 projection; // Projection matrix.
+glm::vec3 cameraEye(0, 0, 20); // Camera position.
+glm::vec3 cameraCenter(0, 0, 0); // The point we are looking at.
+glm::vec3 cameraUp(0, 1, 0); // The up direction of the camera.
 
-    int dir = 0;
+glm::vec3 lightPosition;
+glm::vec3 lightCenter;
+glm::vec3 lightUp(0,0,1);
+bool useLightView = false;
 
+float fovy = 60;
+float near = 1;
+float far = 1000;
+glm::mat4 view = glm::lookAt(cameraEye, cameraCenter, cameraUp); // View matrix, defined by eye, center and up.
+glm::mat4 projection; // Projection matrix.
+
+int dir = 0;
 
 bool collisionToggle = true;
+bool cubeDraw = false;
+
+GLuint program; // The shader program id.
+GLuint projectionLoc; // Location of projection in shader.
+GLuint viewLoc; // Location of view in shader.
+GLuint modelLoc; // Location of model in shader.
+GLuint colorLoc; // Location of color in shader.
+
+GLuint shadowProg;
+
+ShadowMapFBO *shadowMap;
+GLuint shadowShader;
+GLuint depthProg;
+
+GLuint particleProg;
+GLuint glowBlurProg;
 bool particleToggle = true;
-bool cubeDraw = true;
 bool glowToggle = false;
 
-    GLuint program; // The shader program id.
-    GLuint particleProg;
-    GLuint glowBlurProg;
 GLuint blurProg;
     GLuint glowProg;
 
@@ -48,9 +65,6 @@ PointCloud* cloud;
 ParticleGenerator* generator;
 unsigned int quadVAO;
 unsigned int textureColorbuffer;
-
-//unsigned int cubeTexture = loadTexture(FileSystem::getPath("images/marble.jpg").c_str());
-
 };
 
 bool Window::initializeProgram()
@@ -63,17 +77,9 @@ bool Window::initializeProgram()
 //    blurProg = LoadShaders("shaders/blur.vert", "shaders/blur.frag");
     
     // Check the shader program.
-    if (!program)
+    if (!program || !particleProg || !glowBlurProg)
     {
-        std::cerr << "Failed to initialize shader program" << std::endl;
-        return false;
-    }
-
-    // Create shader program for the particle light
-    particleProg = LoadShaders("shaders/particle.vert", "shaders/particle.frag");
-    if (!particleProg)
-    {
-        std::cerr << "Failed to initialize lighting program" << std::endl;
+        std::cerr << "Failed to initialize a shader program" << std::endl;
         return false;
     }
     
@@ -95,8 +101,11 @@ bool Window::initializeProgram()
 //        return false;
 //    }
 
+    glUniform1d(glGetAttribLocation(glowProg, "scene"), 0);
+    glUniform1d(glGetAttribLocation(glowProg, "bloomBlur"), 1);
     
     generator = new ParticleGenerator();
+
     setupGlow();
     return true;
 }
@@ -129,6 +138,7 @@ void Window::setupGlow() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     
 
+
     glGenFramebuffers(1, &hdrFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
     // create 2 floating point color buffers (1 for normal rendering, other for brightness treshold values)
@@ -136,11 +146,12 @@ void Window::setupGlow() {
 
     glGenTextures(1, &textureColorbuffer);
     glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
     
+
     
     // create and attach depth buffer (renderbuffer)
     unsigned int rboDepth;
@@ -155,22 +166,20 @@ void Window::setupGlow() {
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer not complete!" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
 }
 
 
 
 bool Window::initializeObjects()
 {
-//    // Create a cube of size 5.
-    cube = new Cube(10.0f);
-
+    // Create a dragon sprite which the user will navigate
     cloud = new PointCloud("objFolder/dragon.obj", 2.0f);
     cloud->setColor(glm::vec3(0.5f));
     cloud->scale(glm::vec3(1.0f, 1.45f, 1.0f));
     cloud->translate(glm::vec3(-12,-1.0f,0));
 
-
+    // Create a cube of size 5.
+    cube = new Cube(10.0f);
     cube->scale(glm::vec3(0.2f, 0.2f, 0.05f));
     cube->translate(glm::vec3(-12,0,0));
     
@@ -244,9 +253,8 @@ GLFWwindow* Window::createWindow(int width, int height)
 
     // Set swap interval to 1.
     glfwSwapInterval(0);
-
-    // Call the resize callback to make sure things get drawn immediately.
-    Window::resizeCallback(window, width, height);
+	// Call the resize callback to make sure things get drawn immediately.
+	Window::resizeCallback(window, width, height);
 
     return window;
 }
@@ -254,8 +262,8 @@ GLFWwindow* Window::createWindow(int width, int height)
 void Window::resizeCallback(GLFWwindow* window, int w, int h)
 {
 #ifdef __APPLE__
-    // In case your Mac has a retina display.
-    glfwGetFramebufferSize(window, &width, &height);
+	// In case your Mac has a retina display.
+	glfwGetFramebufferSize(window, &width, &height);
 #endif
     width = w*2;
     height = h*2;
@@ -295,7 +303,7 @@ void Window::displayCallback(GLFWwindow* window)
     
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    if(!cubeDraw) {
+    if(cubeDraw) {
         glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
         glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
         cube->draw();
@@ -303,7 +311,6 @@ void Window::displayCallback(GLFWwindow* window)
     glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cloud->getModel()));
     glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cloud->getColor()));
     cloud->draw();
-    
 
 
     maze->draw(glGetUniformLocation(program, "model"), glGetUniformLocation(program, "color"));
@@ -327,6 +334,11 @@ void Window::displayCallback(GLFWwindow* window)
     glfwSwapBuffers(window);
 }
 
+void Window::renderScene()
+{
+    
+}
+
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     /*
@@ -338,6 +350,20 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
     {
         switch (key)
         {
+            case GLFW_KEY_2:
+                if (useLightView)
+                {
+                    view = glm::lookAt(cameraEye, cameraCenter, cameraUp);
+                    projection = glm::perspective(glm::radians(fovy),
+                    (float)width / (float)height, near, far);
+                }
+                else
+                {
+                    view = glm::lookAt(lightPosition, lightCenter, lightUp);
+                    projection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near, far);
+                }
+                useLightView = !useLightView;
+                break;
             case GLFW_KEY_ESCAPE:
                 // Close the window. This causes the program to also terminate.
                 glfwSetWindowShouldClose(window, GL_TRUE);
