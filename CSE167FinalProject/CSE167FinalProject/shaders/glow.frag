@@ -9,8 +9,8 @@ uniform sampler2D bloomBlur;
 
 void main()
 {
-    float exposure = 0.01f;
-    const float gamma = 2.2;
+    float exposure = 1.0f;
+    const float gamma = 2.4;
     vec3 hdrColor = texture(scene, TexCoords).rgb;
     vec3 bloomColor = texture(bloomBlur, TexCoords).rgb;
     hdrColor += bloomColor; // additive blending

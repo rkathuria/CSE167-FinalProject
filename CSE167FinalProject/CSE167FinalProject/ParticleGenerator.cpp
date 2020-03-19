@@ -66,7 +66,6 @@ void ParticleGenerator::update(glm::vec2 loc, int dir) {
 void ParticleGenerator::draw(GLuint posLoc, GLuint colorLoc) {
     for(Particle p : particles) {
         if(p.life > 0) {
-            cout << glm::to_string(p.pos) << endl;
             glUniform2fv(posLoc, 1, glm::value_ptr(p.pos));
             glUniform4fv(colorLoc, 1, glm::value_ptr(p.color));
             p.draw();
