@@ -28,6 +28,7 @@ public:
 	void update();
     void scale(glm::vec3 dir);
     void translate(glm::vec3 dir);
+    void setColor(glm::vec3 c);
 
 	void spin(float deg);
 };
