@@ -98,11 +98,11 @@
 				1344B52D2421C31A0025D9C4 /* blur.vert */,
 				1344B52E2421C31A0025D9C4 /* shader.vert */,
 				1344B52F2421C31A0025D9C4 /* lighting.frag */,
+				1344B5342421C31A0025D9C4 /* lighting.vert */,
 				1344B5302421C31A0025D9C4 /* particle.vert */,
 				1344B5312421C31A0025D9C4 /* shader.frag */,
 				1344B5322421C31A0025D9C4 /* blur.frag */,
 				1344B5332421C31A0025D9C4 /* glow.frag */,
-				1344B5342421C31A0025D9C4 /* lighting.vert */,
 			);
 			name = shaders;
 			path = CSE167FinalProject/shaders;

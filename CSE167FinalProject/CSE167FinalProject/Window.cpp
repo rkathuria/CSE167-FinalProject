@@ -51,10 +51,9 @@ ShadowMapFBO *shadowMap;
 GLuint shadowShader;
 GLuint depthProg;
 
-
 GLuint particleProg;
+GLuint glowBlurProg;
 bool particleToggle = true;
-bool cubeDraw = true;
 bool glowToggle = false;
 
 GLuint blurProg;
@@ -64,9 +63,6 @@ PointCloud* cloud;
 ParticleGenerator* generator;
 unsigned int quadVAO;
 unsigned int textureColorbuffer;
-
-PointCloud* cloud;
-ParticleGenerator* generator;
 };
 
 bool Window::initializeProgram()
@@ -79,7 +75,7 @@ bool Window::initializeProgram()
 //    blurProg = LoadShaders("shaders/blur.vert", "shaders/blur.frag");
     
     // Check the shader program.
-    if (!program || !particleProg || !glowBlurProg || !glowProg || !blurProg || !depthProg)
+    if (!program || !particleProg || !glowBlurProg)
     {
         std::cerr << "Failed to initialize a shader program" << std::endl;
         return false;
@@ -305,7 +301,7 @@ void Window::displayCallback(GLFWwindow* window)
     
     glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
     glUniformMatrix4fv(glGetUniformLocation(program, "view"), 1, GL_FALSE, glm::value_ptr(view));
-    if(!cubeDraw) {
+    if(cubeDraw) {
         glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(cube->getModel()));
         glUniform3fv(glGetUniformLocation(program, "color"), 1, glm::value_ptr(cube->getColor()));
         cube->draw();
